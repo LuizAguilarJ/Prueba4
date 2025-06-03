@@ -31,9 +31,13 @@
         init: function () {
           const marker = this.el;
           const videoEl = document.querySelector("#vid");
+          let playing = false;
+          let timeout = null;
 
           marker.addEventListener("markerFound", async () => {
-            if (videoEl.readyState >= 2) {
+            if (videoEl.readyState >= 2 && !playing) {
+              clearTimeout(timeout);
+              playing = true;
               try {
                 await videoEl.play();
               } catch (e) {
@@ -43,7 +47,10 @@
           });
 
           marker.addEventListener("markerLost", () => {
-            videoEl.pause();
+            timeout = setTimeout(() => {
+              videoEl.pause();
+              playing = false;
+            }, 200); // evita paradas por pérdidas momentáneas
           });
         },
       });
@@ -73,7 +80,7 @@
     <a-scene
       vr-mode-ui="enabled: false"
       loading-screen="enabled: false"
-      arjs="sourceType: webcam; debugUIEnabled: false;"
+      arjs="sourceType: webcam; cameraConfig: {facingMode: 'environment'}; detectionMode: mono; maxDetectionRate: 30; debugUIEnabled: false;"
       embedded
       gesture-detector
     >
@@ -87,7 +94,6 @@
           webkit-playsinline
           playsinline
           muted
-          autoplay
         ></video>
       </a-assets>
 
@@ -100,7 +106,6 @@
         cursor="fuse: false; rayOrigin: mouse;"
         id="marcador1"
       >
-        <!-- usamos a-plane para mayor compatibilidad con iOS -->
         <a-plane
           src="#vid"
           width="1.5"
